@@ -25,12 +25,12 @@ def load_assets():
     file_path = BASE_DIR / "machine_failure_detection.joblib"
 
     # Load dictionary containing all objects
-    pipeline_dict = joblib.load(file_path)
+    pipe_line = joblib.load(file_path)
 
     # Extract components using your dictionary keys
-    transformer = pipeline_dict["transfomer"]
-    scaler = pipeline_dict["scaler"]
-    model = pipeline_dict["xgboost"]
+    transformer = pipe_line["transfomer"]
+    scaler = pipe_line["scaler"]
+    model = pipe_line["xgboost"]
 
     return transformer, scaler, model
 
