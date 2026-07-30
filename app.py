@@ -1,6 +1,6 @@
+import re
 from pathlib import Path
 import joblib
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -22,12 +22,11 @@ st.write(
 @st.cache_resource
 def load_assets():
     BASE_DIR = Path(__file__).resolve().parent
-    file_path = BASE_DIR / "machine_failure_detection.joblib"
+    # Filename matches the joblib dump from the notebook (Cell 235)
+    file_path = BASE_DIR / "machine_failure_prediction.joblib"
 
-    # Load dictionary containing all objects
     pipe_line = joblib.load(file_path)
 
-    # Extract components using your dictionary keys
     transformer = pipe_line["transfomer"]
     scaler = pipe_line["scaler"]
     model = pipe_line["xgboost"]
@@ -38,7 +37,7 @@ def load_assets():
 try:
     transformer, scaler, model = load_assets()
 except Exception as e:
-    st.error(f"⚠️ Error loading model file `machine_failure_detection.joblib`: {e}")
+    st.error(f"⚠️ Error loading model file `machine_failure_prediction.joblib`: {e}")
     st.stop()
 
 # Auto-fill Sample Data Logic
@@ -119,6 +118,7 @@ with st.form("prediction_form"):
 
 # Prediction Logic
 if submit:
+    # Match exact feature names used in training (Cell 195 / Notebook data)
     input_df = pd.DataFrame(
         [
             {
@@ -133,13 +133,18 @@ if submit:
     )
 
     try:
-        # Step 1: Transform categorical/raw features
+        # Step 1: Column Transformer (One-Hot Encoding 'Type')
         transformed_data = transformer.transform(input_df)
 
         # Step 2: Scale numeric features
         scaled_data = scaler.transform(transformed_data)
 
-        # Step 3: Run prediction with XGBoost
+        # Step 3: Clean feature names to match XGBoost expectations (Cell 210)
+        scaled_data.columns = [
+            re.sub(r'[\[\]<>]', '_', str(col)) for col in scaled_data.columns
+        ]
+
+        # Step 4: Model Prediction
         prediction = model.predict(scaled_data)[0]
         prob = model.predict_proba(scaled_data)[0]
 
